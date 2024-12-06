@@ -15,10 +15,11 @@ using std::pair;
 using std::tie;
 using std::stringstream;
 
-int handle(vector<string>& input) {
+pair<int, int> handle(vector<string>& input) {
 
     vector<pair<string, string>> rules;
     auto total = 0;
+    auto total2 = 0;
 
     for (auto i: input) {
         if (i.empty() || i.length() == 1 || i.find_first_not_of(" \t\r\n") == string::npos) {
@@ -32,12 +33,12 @@ int handle(vector<string>& input) {
         } else {
             auto allowed = true;
             vector<int> nums;
+            vector<pair<vector<int>, pair<int, int>>> broken_rules;
             stringstream ss(i);
             string temp;
             while (getline(ss, temp, ',')) {
                 nums.push_back(stoi(temp));
             }
-            
             for (auto j: rules) {
                 string p1,p2;
                 tie(p1, p2) = j;
@@ -54,18 +55,42 @@ int handle(vector<string>& input) {
                 
                 if(pos1 != string::npos && pos2 != string::npos) {
                     if(pos1 >= pos2) {
+                        broken_rules.push_back({nums, {n1, n2}});
                         allowed = false;
-                        break;
+                        continue;
                     }
                 }
             }
-            
-            if (allowed) {
+            if (broken_rules.size() != 0) {
+                vector<int> fixed_nums = nums; 
+                for (auto j: broken_rules) {
+                    vector<int> temp_nums;
+                    pair<int, int> rule;
+                    tie(temp_nums, rule) = j;
+                    int rule_first, rule_second;
+                    tie(rule_first, rule_second) = rule; 
+
+                    int pos1 = -1, pos2 = -1;
+                    for(size_t i = 0; i < fixed_nums.size(); i++) {
+                        if(fixed_nums[i] == rule_first) pos1 = i;
+                        if(fixed_nums[i] == rule_second) pos2 = i;
+                    }
+
+                    if(pos1 != -1 && pos2 != -1 && pos1 > pos2) {
+                        int temp = fixed_nums[pos1];
+                        for(int i = pos1; i > pos2; i--) {
+                            fixed_nums[i] = fixed_nums[i-1];
+                        }
+                        fixed_nums[pos2] = temp;
+                    }
+                }
+                total2 += fixed_nums[fixed_nums.size() / 2]; 
+            } else if (allowed) {
                 total += nums[nums.size() / 2];
             }
         }
     }
-    return total;
+    return {total, total2};
 
 }
 
@@ -77,5 +102,6 @@ int main() {
         input.push_back(line);
     }
     auto out = handle(input);
-    cout << out << endl;
+    cout << out.first << endl;
+    cout << out.second << endl;
 }
